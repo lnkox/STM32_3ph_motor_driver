@@ -1,0 +1,25 @@
+--cpu Cortex-M3
+"3ph\startup_stm32f103xb.o"
+"3ph\system_stm32f1xx.o"
+"3ph\stm32f1xx_it.o"
+"3ph\stm32f1xx_hal_msp.o"
+"3ph\main.o"
+"3ph\stm32f1xx_hal_flash.o"
+"3ph\stm32f1xx_hal_tim_ex.o"
+"3ph\stm32f1xx_hal_uart.o"
+"3ph\stm32f1xx_hal_gpio_ex.o"
+"3ph\stm32f1xx_hal_rcc_ex.o"
+"3ph\stm32f1xx_hal_tim.o"
+"3ph\stm32f1xx_hal_cortex.o"
+"3ph\stm32f1xx_hal.o"
+"3ph\stm32f1xx_hal_rcc.o"
+"3ph\stm32f1xx_hal_gpio.o"
+"3ph\stm32f1xx_hal_flash_ex.o"
+"3ph\stm32f1xx_hal_dma.o"
+"3ph\stm32f1xx_hal_adc_ex.o"
+"3ph\stm32f1xx_hal_pwr.o"
+"3ph\stm32f1xx_hal_adc.o"
+--library_type=microlib --strict --scatter "3ph\3ph.sct"
+--diag_suppress=L6329 --summary_stderr --info summarysizes --map --xref --callgraph --symbols
+--info sizes --info totals --info unused --info veneers
+--list "3ph.map" -o 3ph\3ph.axf
