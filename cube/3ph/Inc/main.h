@@ -69,9 +69,19 @@
 #define ERROR_LED(x) HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, x );
 #define NORMAL_LED(x) HAL_GPIO_WritePin(GPIOB, GPIO_PIN_15, x );
 
+#define RELAY(x) HAL_GPIO_WritePin(GPIOA, GPIO_PIN_11, x );
+#define FAN(x) HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, x );
+#define BRK_RES(x) HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, x );
+
+#define ERR_NONE	0
+#define ERR_LOW_VOLTAGE	1
+#define ERR_OVER_VOLTAGE	2
+#define ERR_OVER_TEMP	3
+#define ERR_OVER_CURRENT	4
+
 extern  char mode; // device work mode (0-stop,1-run,2-brake)
 extern char direct; // direction (0-forward, 1-reverse)
-
+extern short int adc_value[4]; 
 void stop_pwm(void);
 void run_pwm(void);
 /* USER CODE END Private defines */

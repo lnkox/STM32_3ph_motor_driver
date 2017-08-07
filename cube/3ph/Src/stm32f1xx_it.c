@@ -45,11 +45,14 @@ char cur_freq=0;// curent work frequency
 char freq=0;// set frequency
 int accel_cnt=0;// Acceleration counter
 int brake_cnt=0;// Brake counter 
-int but_cnt=0;
-int n_table=0;
+int slow_cnt=0; // slow timer count
+int n_table=0; // number sinus table
+int relay_on=0; // relay_state
+int ERR=0; // error type
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
+extern DMA_HandleTypeDef hdma_adc1;
 extern TIM_HandleTypeDef htim1;
 extern TIM_HandleTypeDef htim3;
 extern TIM_HandleTypeDef htim4;
@@ -197,6 +200,20 @@ void SysTick_Handler(void)
 /******************************************************************************/
 
 /**
+* @brief This function handles DMA1 channel1 global interrupt.
+*/
+void DMA1_Channel1_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA1_Channel1_IRQn 0 */
+
+  /* USER CODE END DMA1_Channel1_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_adc1);
+  /* USER CODE BEGIN DMA1_Channel1_IRQn 1 */
+
+  /* USER CODE END DMA1_Channel1_IRQn 1 */
+}
+
+/**
 * @brief This function handles TIM1 break interrupt.
 */
 void TIM1_BRK_IRQHandler(void)
@@ -206,7 +223,7 @@ void TIM1_BRK_IRQHandler(void)
   /* USER CODE END TIM1_BRK_IRQn 0 */
   HAL_TIM_IRQHandler(&htim1);
   /* USER CODE BEGIN TIM1_BRK_IRQn 1 */
-	ERROR_LED(1);
+	ERR=ERR_OVER_CURRENT;
   /* USER CODE END TIM1_BRK_IRQn 1 */
 }
 
@@ -220,40 +237,66 @@ void TIM3_IRQHandler(void)
   /* USER CODE END TIM3_IRQn 0 */
   HAL_TIM_IRQHandler(&htim3);
   /* USER CODE BEGIN TIM3_IRQn 1 */
-	if (mode>0)
-	{ 
-		
-			if(cur_freq<freq || cur_freq>freq)
-			{
-					accel_cnt++;
-					if (accel_cnt>ACCELERATION) 
-					{
-							accel_cnt=0; 
-							if (cur_freq<freq) {cur_freq++;} else {cur_freq--;}
-							TIM4->ARR =8000000/(SINTABLESIZE*cur_freq);
-							//TIM4->ARR=65000;
-							n_table=cur_freq-1;
-							if (n_table>49) n_table=49;
-					}
-			}
-			NORMAL_LED(0);
-			RUN_LED(1);
-	} 
-	else
-	{  
-		char rev_b=REVERSE_BUT;
-		char for_b=FORWARD_BUT;
-		if(rev_b==1) {mode=1;direct=DIRECTION_REVERSE;run_pwm();}
-		if(for_b==1) {mode=1;direct=DIRECTION_FORWARD;run_pwm();} 
-		NORMAL_LED(1);
+	if (ERR>0)
+	{
+		stop_pwm();
+		BRK_RES(0);
+		RELAY(0); 
+		relay_on=0; 
+		cur_freq=0;
+		mode=0;
+		ERROR_LED(1);
+		NORMAL_LED(0);
 		RUN_LED(0);
-	}  
+	}
+	else
+	{	
+		if (adc_value[0]>2755) {ERR=ERR_OVER_VOLTAGE;stop_pwm();return;} // check voltage >370V: ERROR=ERR_OVER_VOLTAGE 
+		if (adc_value[0]<2010 && relay_on==1) {ERR=ERR_LOW_VOLTAGE; stop_pwm(); return;} // check voltage <270V and relay=ON: ERROR=ERR_LOW_VOLTAGE 
+		if (adc_value[0]>2234) {relay_on=1; RELAY(1);} // check voltage >300V: ON relay 
+		if (adc_value[0]>2606) {BRK_RES(1);} // check voltage >350V: ON brake resistance
+		if (adc_value[0]<2345) {BRK_RES(0);} // check voltage <315V: ON brake resistance
+		if (relay_on==1)
+		{	
+			NORMAL_LED(1);
+			if (mode>0)
+			{ 
+				
+					if(cur_freq<freq || cur_freq>freq)
+					{
+							accel_cnt++;
+							if (accel_cnt>ACCELERATION) 
+							{
+									accel_cnt=0; 
+									if (cur_freq<freq) {cur_freq++;} else {cur_freq--;}
+									TIM4->ARR =(8000000/(SINTABLESIZE*cur_freq))-1;
+									//TIM4->ARR=53333;
+									n_table=cur_freq-1;
+									if (n_table>49) n_table=49;
+							}
+					}
+			} 
+			else
+			{  
+				char rev_b=REVERSE_BUT;
+				char for_b=FORWARD_BUT;
+				if(rev_b==1) {mode=1;direct=DIRECTION_REVERSE;run_pwm();}
+				if(for_b==1) {mode=1;direct=DIRECTION_FORWARD;run_pwm();} 
+				RUN_LED(0);
+			}
+		}
+		else
+		{
+			NORMAL_LED(0);
+		}
+	}
 	char stop_b=STOP_BUT;
 	if(stop_b==1)
 	{ 
 			if (mode==0)
 			{
-					ERROR_LED(0);   
+					ERR=0;  
+					ERROR_LED(0);
 			}
 			else
 			{
@@ -263,38 +306,25 @@ void TIM3_IRQHandler(void)
 	if (mode==2)
 	{
 		BRAKE_LED(1);
-		RUN_LED(0);
 		freq=1;
 		if (cur_freq==1)  brake_cnt++;
 		if (brake_cnt>BRAKE_PERIOD) {brake_cnt=0;mode=0;BRAKE_LED(0);}
 	}
 			
-	//temp
-	but_cnt++;
-	if (but_cnt>250) 
+	
+	slow_cnt++;
+	if (slow_cnt>250) 
 	{
-		but_cnt=0;
-		char inc_b=inc_freq;
-		char dec_b=dec_freq;
-		char min_b=min_freq;
-		char max_b=max_freq;
-		if (inc_b==1)
-		{
-			freq++;
-			if (freq>50) freq=50;
-		}
-		if (dec_b==1)
-		{
-			freq--;
-			if (freq<1) freq=1;
-		}
-		if (min_b==1) freq=1;
-		if (max_b==1) freq=60;
+		slow_cnt=0;
+		freq=adc_value[3]/68+1; //set frequency by adc
+		if (adc_value[1]>3500) {ERR=ERR_OVER_TEMP;} //check temperature>70: ERR=ERR_OVER_TEMP
+		if (adc_value[1]>2000) FAN(1); //check temperature>45: FAN=ON
+		if (adc_value[1]<1000) FAN(0); //check temperature<35: FAN=OFF
 	}
 	
 	
 	
-	//temp
+
   /* USER CODE END TIM3_IRQn 1 */
 }
 
@@ -310,10 +340,11 @@ void TIM4_IRQHandler(void)
   /* USER CODE BEGIN TIM4_IRQn 1 */
 	if (mode>0 ) 
         {
+					
 						sinpos1++;
 						sinpos2++;
 						sinpos3++;
-						if (sinpos1==SINTABLESIZE) sinpos1=0;
+						if (sinpos1==SINTABLESIZE) {sinpos1=0;HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_12); }
 						if (sinpos2==SINTABLESIZE) sinpos2=0;
 						if (sinpos3==SINTABLESIZE) sinpos3=0;	
 						TIM1->CCR1=SINTABLE [n_table][sinpos1];

@@ -219,7 +219,7 @@ out = out & "{"
         trad = (a / cnt) * 2 * 3.1415
         sinv = Sin(trad)
         Sina = Int(sinv * Y)
-        out = out & Int(Sina * 10.2) + 1024 & ","
+        out = out & Int(Sina * 1.25) + 127 & ","
         char_pic.DrawWidth = 3
         char_pic.PSet ((a / 3) * 15 * 10, 250 * 15 - Sina * 15 * 2), RGB(nzn * 5, 250 - nzn * 3, 200)
     Next
