@@ -87,7 +87,7 @@
 
 #define TEMR_FAN_ON 	2000 // TEMPERATURE TO FAN ON 
 #define TEMR_FAN_OFF 	1000 // TEMPERATURE TO FAN OFF  
-#define TEMR_MAX 	3500 //  MAXIMUM WORK TEMPERATURE    
+#define TEMR_MAX 	3000 //  MAXIMUM WORK TEMPERATURE    
 
 extern  char mode; // device work mode (0-stop,1-run,2-brake)
 extern char direct; // direction (0-forward, 1-reverse)

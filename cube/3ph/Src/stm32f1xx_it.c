@@ -251,11 +251,11 @@ void TIM3_IRQHandler(void)
 	}
 	else
 	{	
-		if (adc_value[0]>2755) {ERR=ERR_OVER_VOLTAGE;stop_pwm();return;} // check voltage >370V: ERROR=ERR_OVER_VOLTAGE 
-		if (adc_value[0]<2010 && relay_on==1) {ERR=ERR_LOW_VOLTAGE; stop_pwm(); return;} // check voltage <270V and relay=ON: ERROR=ERR_LOW_VOLTAGE 
-		if (adc_value[0]>2234) {relay_on=1; RELAY(1);} // check voltage >300V: ON relay 
-		if (adc_value[0]>2606) {BRK_RES(1);} // check voltage >350V: ON brake resistance
-		if (adc_value[0]<2345) {BRK_RES(0);} // check voltage <315V: ON brake resistance
+		if (adc_value[0]>VOLT_MAX) {ERR=ERR_OVER_VOLTAGE;stop_pwm();return;} // check voltage >VOLT_MAX: ERROR=ERR_OVER_VOLTAGE 
+		if (adc_value[0]<VOLT_MIN && relay_on==1) {ERR=ERR_LOW_VOLTAGE; stop_pwm(); return;} // check voltage <VOLT_MIN and relay=ON: ERROR=ERR_LOW_VOLTAGE 
+		if (adc_value[0]>VOLT_RELAY_ON) {relay_on=1; RELAY(1);} // check voltage >VOLT_RELAY_ON: ON relay 
+		if (adc_value[0]>VOLT_BRKRES_ON ) {BRK_RES(1);} // check voltage >VOLT_BRKRES_ON : ON brake resistor
+		if (adc_value[0]<VOLT_BRKRES_OFF ) {BRK_RES(0);} // check voltage <VOLT_BRKRES_OFF: OFF brake resistor
 		if (relay_on==1)
 		{	
 			NORMAL_LED(1);
@@ -317,9 +317,9 @@ void TIM3_IRQHandler(void)
 	{
 		slow_cnt=0;
 		freq=adc_value[3]/68+1; //set frequency by adc
-		if (adc_value[1]>3500) {ERR=ERR_OVER_TEMP;} //check temperature>70: ERR=ERR_OVER_TEMP
-		if (adc_value[1]>2000) FAN(1); //check temperature>45: FAN=ON
-		if (adc_value[1]<1000) FAN(0); //check temperature<35: FAN=OFF
+		if (adc_value[1]>TEMR_MAX) {ERR=ERR_OVER_TEMP;} //check temperature>TEMR_MAX: ERR=ERR_OVER_TEMP
+		if (adc_value[1]>TEMR_FAN_ON ) FAN(1); //check temperature>TEMR_FAN_ON : FAN=ON
+		if (adc_value[1]<TEMR_FAN_OFF ) FAN(0); //check temperature<TEMR_FAN_OFF : FAN=OFF
 	}
 	
 	
